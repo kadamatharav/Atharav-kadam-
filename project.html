@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linked List QuickSort Visualizer</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #89f7fe, #66a6ff);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    background-color: #333;
+    color: #fff;
+    padding: 15px 0;
+    text-align: center;
+    box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+  }
+
+  h1 {
+    margin: 0;
+  }
+
+  #controls {
+    margin: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  input[type="number"] {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    width: 120px;
+  }
+
+  button {
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    background-color: #fff;
+    color: #333;
+    font-weight: bold;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    background-color: #333;
+    color: #fff;
+  }
+
+  #linkedListContainer {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    min-height: 120px;
+    padding: 20px;
+    border-radius: 15px;
+    background-color: rgba(255,255,255,0.2);
+  }
+
+  .node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    border-radius: 10px;
+    margin: 10px;
+    position: relative;
+    transition: all 0.5s ease;
+  }
+
+  .node.pivot { background-color: #FF5722 !important; }
+  .node.compare { background-color: #FFC107 !important; }
+  .node.swap { background-color: #2196F3 !important; }
+  .node.delete { background-color: #F44336 !important; }
+
+  .arrow {
+    width: 30px;
+    height: 2px;
+    background: #fff;
+    position: relative;
+    top: -25px;
+    margin: 0 5px;
+  }
+
+  .arrow::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    border: 5px solid transparent;
+    border-left-color: #fff;
+  }
+
+  #info {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: rgba(255,255,255,0.2);
+    border-radius: 15px;
+    color: #fff;
+    max-width: 600px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Linked List QuickSort Visualizer</h1>
+</header>
+
+<div id="controls">
+  <input type="number" id="nodeValue" placeholder="Enter value">
+  <button onclick="insertAtBeginning()">Insert at Beginning</button>
+  <button onclick="insertAtEnd()">Insert at End</button>
+  <button onclick="deleteNode()">Delete Node</button>
+  <button onclick="quickSortStart()">Start QuickSort</button>
+  <button onclick="displayList()">Display List</button>
+</div>
+
+<div id="linkedListContainer"></div>
+
+<div id="info">
+  <h3>Color Information:</h3>
+  <ul>
+    <li><strong>Green:</strong> Normal node</li>
+    <li><strong>Orange:</strong> Pivot node in QuickSort</li>
+    <li><strong>Yellow:</strong> Node being compared</li>
+    <li><strong>Blue:</strong> Nodes being swapped</li>
+    <li><strong>Red:</strong> Node being deleted</li>
+  </ul>
+</div>
+
+<script>
+// Linked List Node
+class Node {
+  constructor(value) {
+    this.value = value;
+    this.next = null;
+  }
+}
+
+// Linked List
+class LinkedList {
+  constructor() {
+    this.head = null;
+    this.nodes = [];
+  }
+
+  insertAtBeginning(value) {
+    let newNode = new Node(value);
+    newNode.next = this.head;
+    this.head = newNode;
+    this.nodes.unshift(newNode);
+  }
+
+  insertAtEnd(value) {
+    let newNode = new Node(value);
+    if (!this.head) {
+      this.head = newNode;
+      this.nodes.push(newNode);
+      return;
+    }
+    let temp = this.head;
+    while(temp.next) temp = temp.next;
+    temp.next = newNode;
+    this.nodes.push(newNode);
+  }
+
+  deleteNode() {
+    if(!this.head) return alert("List is empty!");
+    const value = prompt("Enter value to delete:");
+    if(value === null) return;
+    let val = parseInt(value);
+    if(this.head.value === val){
+      this.head = this.head.next;
+      this.nodes.shift();
+      renderLinkedList({delete:0});
+      return;
+    }
+    let temp = this.head;
+    let index = 0;
+    while(temp.next && temp.next.value !== val){
+      temp = temp.next;
+      index++;
+    }
+    if(temp.next){
+      temp.next = temp.next.next;
+      this.nodes.splice(index+1,1);
+      renderLinkedList({delete:index+1});
+    } else {
+      alert("Value not found!");
+    }
+  }
+
+  toArray() {
+    let arr = [];
+    let temp = this.head;
+    while(temp){
+      arr.push(temp.value);
+      temp = temp.next;
+    }
+    return arr;
+  }
+
+  updateFromArray(arr) {
+    let temp = this.head;
+    let i = 0;
+    while(temp){
+      temp.value = arr[i++];
+      temp = temp.next;
+    }
+  }
+}
+
+const linkedList = new LinkedList();
+const container = document.getElementById('linkedListContainer');
+
+// Render Linked List
+function renderLinkedList(highlight={}) {
+  container.innerHTML = '';
+  linkedList.nodes.forEach((node, index)=>{
+    const nodeDiv = document.createElement('div');
+    nodeDiv.classList.add('node');
+    nodeDiv.textContent = node.value;
+
+    if(highlight.pivot === index) nodeDiv.classList.add('pivot');
+    if(highlight.compare === index) nodeDiv.classList.add('compare');
+    if(highlight.swap && highlight.swap.includes(index)) nodeDiv.classList.add('swap');
+    if(highlight.delete === index) nodeDiv.classList.add('delete');
+
+    container.appendChild(nodeDiv);
+    if(index < linkedList.nodes.length-1){
+      const arrow = document.createElement('div');
+      arrow.classList.add('arrow');
+      container.appendChild(arrow);
+    }
+  });
+}
+
+// Operations
+function insertAtBeginning(){
+  const val = document.getElementById('nodeValue').value;
+  if(val==='') return alert("Enter a value!");
+  linkedList.insertAtBeginning(parseInt(val));
+  renderLinkedList();
+  document.getElementById('nodeValue').value='';
+}
+
+function insertAtEnd(){
+  const val = document.getElementById('nodeValue').value;
+  if(val==='') return alert("Enter a value!");
+  linkedList.insertAtEnd(parseInt(val));
+  renderLinkedList();
+  document.getElementById('nodeValue').value='';
+}
+
+function deleteNode(){
+  linkedList.deleteNode();
+}
+
+function displayList(){
+  alert("Current List: " + linkedList.toArray().join(" -> "));
+}
+
+// Swap animation
+function swap(arr, i, j){
+  return new Promise(resolve=>{
+    renderLinkedList({swap:[i,j]});
+    setTimeout(()=>{
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      linkedList.updateFromArray(arr);
+      renderLinkedList();
+      resolve();
+    },700);
+  });
+}
+
+// Partition
+async function partition(arr, low, high){
+  let pivot = arr[high];
+  let i = low-1;
+  renderLinkedList({pivot:high});
+  for(let j=low; j<high; j++){
+    renderLinkedList({pivot:high, compare:j});
+    await new Promise(r=>setTimeout(r,500));
+    if(arr[j]<pivot){
+      i++;
+      await swap(arr,i,j);
+    }
+  }
+  await swap(arr,i+1,high);
+  return i+1;
+}
+
+// QuickSort
+async function quickSort(arr, low, high){
+  if(low<high){
+    let pi = await partition(arr, low, high);
+    await quickSort(arr, low, pi-1);
+    await quickSort(arr, pi+1, high);
+  }
+}
+
+// Start QuickSort
+function quickSortStart(){
+  const arr = linkedList.toArray();
+  if(arr.length===0) return alert("List is empty!");
+  quickSort(arr,0,arr.length-1);
+}
+
+// Initial render
+renderLinkedList();
+</script>
+</body>
+</html>
